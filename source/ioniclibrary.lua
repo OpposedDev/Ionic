@@ -30,6 +30,18 @@ createUiCorner = function(parent: Instance, radius: number)
 	uiCorner.CornerRadius = UDim.new(0, radius)
 end
 
+createUiStroke = function(parent: Instance, thickness: number, color: Color3, transparency: number)
+	local uiStroke = Instance.new("UIStroke", parent)
+	uiStroke.Thickness = thickness
+	uiStroke.Color = color
+	uiStroke.Transparency = transparency
+	parent.Changed:Connect(function(property)
+		if property == "BackgroundTransparency" then
+			uiStroke.Transparency = parent.BackgroundTransparency
+		end
+	end)
+end
+
 createUiGradient = function(parent: Instance, rotation: number, colorinfo: ColorSequence, transparencyinfo: NumberSequence)
 	local uiGradient = Instance.new("UIGradient", parent)
 	uiGradient.Rotation = rotation
@@ -648,6 +660,15 @@ local library = {
 
 				slider.BorderSizePixel = 0
 				
+				local pickercircle = Instance.new("Frame",picker)
+				pickercircle.AnchorPoint = Vector2.new(0.5,0.5)
+				pickercircle.Position = UDim2.new(dH,0,1-dS,0)
+				
+				pickercircle.Size = UDim2.new(0,8,0,8)
+				
+				pickercircle.BackgroundTransparency = 1
+				pickercircle.BackgroundColor3 = Color3.new(1,1,1)
+				
 				local suppressClick = false
 				
 				local sliderpressed = false
@@ -685,6 +706,7 @@ local library = {
 						triggerTween(overlay,{BackgroundTransparency = dV})
 						triggerTween(sliderBg,{BackgroundTransparency = 0})
 						triggerTween(slider,{BackgroundTransparency = 0})
+						triggerTween(pickercircle,{BackgroundTransparency = 0})
 					else
 						button.Text = "Open"
 						
@@ -694,6 +716,7 @@ local library = {
 						triggerTween(overlay,{BackgroundTransparency = 1})
 						triggerTween(sliderBg,{BackgroundTransparency = 1})
 						triggerTween(slider,{BackgroundTransparency = 1})
+						triggerTween(pickercircle,{BackgroundTransparency = 1})
 					end
 				end)
 				
@@ -765,6 +788,8 @@ local library = {
 							dH = math.clamp(curposx/maxposx,0,1)
 							dS = math.clamp(1 - curposy/maxposy,0,1)
 							
+							pickercircle.Position = UDim2.new(dH,0,1 - dS,0)
+							
 							currentColor = Color3.fromHSV(dH,dS,dV)
 							
 							preview.BackgroundColor3 = currentColor
@@ -794,12 +819,15 @@ local library = {
 					ColorSequenceKeypoint.new(1,Color3.fromHSV(1,1,1)),
 				})
 				
+				createUiStroke(pickercircle,1,Color3.new(0,0,0),1)
+				
 				createUiCorner(main,8)
 				createUiCorner(preview,8)
 				createUiCorner(picker,8)
 				createUiCorner(sliderBg,8)
 				createUiCorner(soverlay,8)
 				createUiCorner(overlay,8)
+				createUiCorner(pickercircle,5)
 			end
 			
 			return sectionDict
