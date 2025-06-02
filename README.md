@@ -55,7 +55,7 @@ section:createToggle({
 ```
 
 With the Ionic UI library, you can directly connect your callback to a RunService event.
-For information on RunService events, go to [Roblox Documentation Page](https://create.roblox.com/docs/reference/engine/classes/RunService#Heartbeat).
+For information on RunService events, go to Roblox's documentation page for [RunService](https://create.roblox.com/docs/reference/engine/classes/RunService#Heartbeat).
 ```lua
 section:createToggle({
 	Name = "Connected Toggle Example",
