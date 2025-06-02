@@ -2,6 +2,7 @@ playerService = game:GetService("Players")
 runService = game:GetService("RunService")
 tweenService = game:GetService("TweenService")
 userInputService = game:GetService("UserInputService")
+playerMouse = playerService.LocalPlayer:GetMouse()
 
 connectionTypes = {
 	Heartbeat = runService.Heartbeat,
@@ -19,8 +20,8 @@ function changeBrightness(color, multiplier)
 end
 
 function formatFloat(number: number): string
-	local formatted = string.format("%.3f", number)
-	formatted = formatted:gsub("%.?0+$", "")
+	local formatted = string.format("%.3f", number) --> omit to three decimals
+	formatted = formatted:gsub("%.?0+$", "") --> remove the dot and trailing zeroes
 	return formatted
 end
 
@@ -182,6 +183,39 @@ local library = {
 		sectionBg.BackgroundColor3 = changeBrightness(backgroundPrimary, 1/1.25)
 		
 		sectionBg.ClipsDescendants = true
+		
+		local windowhover = false
+		local windowmove = false
+		local mouseoffset = Vector2.new(0,0)
+		
+		title.MouseEnter:Connect(function()
+			windowhover = true
+		end)
+		
+		title.MouseLeave:Connect(function()
+			windowhover = false
+		end)
+		
+		userInputService.InputBegan:Connect(function(input: InputObject)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				if windowhover then
+					mouseoffset = Vector2.new(playerMouse.X,playerMouse.Y)
+					windowmove = true
+				end
+			end
+		end)
+		
+		userInputService.InputEnded:Connect(function(input: InputObject)
+			windowmove = false
+		end)
+		
+		playerMouse.Move:Connect(function()
+			if windowmove then
+				local new = Vector2.new(playerMouse.X,playerMouse.Y)
+				window.Position += UDim2.new(0, new.X - mouseoffset.X, 0, new.Y - mouseoffset.Y)
+				mouseoffset = new
+			end
+		end)
 		
 		-- ui instance creation
 		createUiListLayout(ssScroll,Enum.FillDirection.Horizontal)
@@ -417,6 +451,9 @@ local library = {
 			function sectionDict:createSlider(properties)
 				local suffix: string = properties.Suffix or ""
 				
+				local min = properties.Range[1]
+				local max = properties.Range[2]
+				
 				local main = Instance.new("TextLabel", section)
 				main.Name = "slider_"..properties.Name
 
@@ -458,7 +495,7 @@ local library = {
 				sliderBg.ClipsDescendants = true
 				
 				local slider = Instance.new("Frame",sliderBg)
-				slider.Size = UDim2.new(properties.Default / (properties.Max - properties.Min),0,1,0)
+				slider.Size = UDim2.new(properties.Default / (max - min),0,1,0)
 				
 				slider.BackgroundColor3 = enabled
 				
@@ -496,9 +533,9 @@ local library = {
 
 							local maxpos = sliderBg.AbsoluteSize.X
 
-							local curscaled = math.round((math.clamp(curpos/maxpos,0,1) * (properties.Max - properties.Min)) / properties.Increment) * properties.Increment + properties.Min
+							local curscaled = math.round((math.clamp(curpos/maxpos,0,1) * (max - min)) / properties.Increment) * properties.Increment + min
 
-							local curnorm = (curscaled - properties.Min) / (properties.Max - properties.Min)
+							local curnorm = (curscaled - min) / (max - min)
 
 							text.Text = formatFloat(curscaled).." "..suffix
 
