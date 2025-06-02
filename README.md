@@ -1,4 +1,5 @@
-# Ionic
+# Ionic UI Library
+![Thumbnail](/images/thumbnail.png)
 A simplistic and easy-to-use UI Library made for use on any executor.
 
 # How to Use
