@@ -82,7 +82,7 @@ local library = {
 	
 	main = nil,
 	
-	libver = "6/1/2025-stable",
+	libver = "6/2/2025-stable",
 	
 	window = {},
 	
