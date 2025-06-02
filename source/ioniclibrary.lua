@@ -19,14 +19,21 @@ function changeBrightness(color, multiplier)
 end
 
 function formatFloat(number: number): string
-	local formatted = string.format("%.3f", number) --> omit to three decimals
-	formatted = formatted:gsub("%.?0+$", "") --> remove the dot and trailing zeroes
+	local formatted = string.format("%.3f", number)
+	formatted = formatted:gsub("%.?0+$", "")
 	return formatted
 end
 
 createUiCorner = function(parent: Instance, radius: number)
 	local uiCorner = Instance.new("UICorner", parent)
 	uiCorner.CornerRadius = UDim.new(0, radius)
+end
+
+createUiGradient = function(parent: Instance, rotation: number, colorinfo: ColorSequence, transparencyinfo: NumberSequence)
+	local uiGradient = Instance.new("UIGradient", parent)
+	uiGradient.Rotation = rotation
+	uiGradient.Color = colorinfo or ColorSequence.new(Color3.new(1,1,1))
+	uiGradient.Transparency = transparencyinfo or NumberSequence.new(0)
 end
 
 createUiListLayout = function(parent: Instance, direction: Enum.FillDirection)
@@ -505,6 +512,257 @@ local library = {
 				-- ui instance creation
 				createUiCorner(main, 8)
 				createUiCorner(sliderBg, 8)
+			end
+			
+			function sectionDict:createColorPicker(properties)
+				local dH, dS, dV = properties.Default:ToHSV()
+				
+				local main = Instance.new("TextButton", section)
+				main.Name = "colorpicker_"..properties.Name
+
+				main.AnchorPoint = Vector2.new(0.5,0)
+				main.Position = UDim2.new(0.5,0,0,17)
+
+				main.Size = UDim2.new(1,0,0,24)
+
+				main.BackgroundColor3 = buttonPrimary
+
+				main.Text = " "..properties.Name
+				main.TextColor3 = textPrimary
+				main.TextSize = 16
+				main.TextXAlignment = Enum.TextXAlignment.Left
+				main.TextYAlignment = Enum.TextYAlignment.Center
+				main.Font = Enum.Font.Code
+
+				main.AutoButtonColor = false
+
+				local button = Instance.new("TextLabel", main)
+				button.AnchorPoint = Vector2.new(1,0)
+				button.Position = UDim2.new(1,-60,0,0)
+
+				button.Size = UDim2.new(0,52,0,24)
+
+				button.BackgroundTransparency = 1
+
+				button.Text = "Open"
+				button.TextColor3 = textPrimary
+				button.TextSize = 14
+				button.TextXAlignment = Enum.TextXAlignment.Right
+				button.Font = Enum.Font.Code
+				
+				local preview = Instance.new("TextButton", main)
+				preview.Active = false
+				
+				preview.AnchorPoint = Vector2.new(1,0)
+				preview.Position = UDim2.new(1,-2,0,2)
+
+				preview.Size = UDim2.new(0,55,0,20)
+
+				preview.BackgroundColor3 = properties.Default
+
+				preview.Text = ""
+
+				preview.AutoButtonColor = false
+				
+				local picker = Instance.new("Frame", main)
+				picker.Active = false
+				
+				picker.AnchorPoint = Vector2.new(1,0)
+				picker.Position = UDim2.new(1,-24,0,26)
+				
+				picker.Size = UDim2.new(0,200,1,-28)
+				
+				picker.BackgroundTransparency = 1
+				picker.BackgroundColor3 = Color3.new(1,1,1)
+				
+				local soverlay = Instance.new("Frame",picker)
+				soverlay.Size = UDim2.new(1,0,1,0)
+				
+				soverlay.BackgroundTransparency = 1
+				soverlay.BackgroundColor3 = Color3.new(1,1,1)
+				
+				local overlay = Instance.new("Frame",picker)
+				overlay.Size = UDim2.new(1,0,1,0)
+				
+				overlay.BackgroundTransparency = dV
+				overlay.BackgroundColor3 = Color3.new(0,0,0)
+				
+				local sliderBg = Instance.new("CanvasGroup", main)
+				sliderBg.Active = false
+
+				sliderBg.AnchorPoint = Vector2.new(1,0)
+				sliderBg.Position = UDim2.new(1,-2,0,26)
+
+				sliderBg.Size = UDim2.new(0,20,1,-28)
+
+				sliderBg.BackgroundTransparency = 1
+				sliderBg.BackgroundColor3 = disabled
+				
+				sliderBg.ClipsDescendants = true
+				
+				local slider = Instance.new("Frame",sliderBg)
+				slider.AnchorPoint = Vector2.new(0,1)
+				slider.Position = UDim2.new(0,0,1,0)
+				
+				slider.Size = UDim2.new(1,0,dV/1,0)
+				
+				slider.BackgroundTransparency = 1
+				slider.BackgroundColor3 = enabled
+
+				slider.BorderSizePixel = 0
+				
+				local suppressClick = false
+				
+				local sliderpressed = false
+				local sliderhovering = false
+				
+				local pickerpressed = false
+				local pickerhovering = false
+				
+				local currentColor = properties.Default or Color3.new(1,1,1)
+				local opened = false
+
+				main.MouseEnter:Connect(function()
+					triggerTween(main,{BackgroundColor3 = changeBrightness(buttonPrimary,0.9)})
+				end)
+
+				main.MouseLeave:Connect(function()
+					triggerTween(main,{BackgroundColor3 = buttonPrimary})
+					suppressClick = false
+				end)
+				
+				main.Activated:Connect(function()
+					if suppressClick == true then
+						suppressClick = false
+						return
+					end
+					
+					opened = not opened
+					
+					if opened then
+						button.Text = "Close"
+						
+						triggerTween(main,{Size = UDim2.new(1,0,0,128)})
+						triggerTween(picker,{BackgroundTransparency = 0})
+						triggerTween(soverlay,{BackgroundTransparency = 0})
+						triggerTween(overlay,{BackgroundTransparency = dV})
+						triggerTween(sliderBg,{BackgroundTransparency = 0})
+						triggerTween(slider,{BackgroundTransparency = 0})
+					else
+						button.Text = "Open"
+						
+						triggerTween(main,{Size = UDim2.new(1,0,0,24)})
+						triggerTween(picker,{BackgroundTransparency = 1})
+						triggerTween(soverlay,{BackgroundTransparency = 1})
+						triggerTween(overlay,{BackgroundTransparency = 1})
+						triggerTween(sliderBg,{BackgroundTransparency = 1})
+						triggerTween(slider,{BackgroundTransparency = 1})
+					end
+				end)
+				
+				sliderBg.MouseEnter:Connect(function()
+					sliderhovering = true
+				end)
+
+				sliderBg.MouseLeave:Connect(function()
+					sliderhovering = false
+				end)
+				
+				picker.MouseEnter:Connect(function()
+					pickerhovering = true
+				end)
+
+				picker.MouseLeave:Connect(function()
+					pickerhovering = false
+				end)
+
+				userInputService.InputBegan:Connect(function(input: InputObject)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+						if opened then
+							if sliderhovering then
+								sliderpressed = true
+								suppressClick = true
+							end
+							if pickerhovering then
+								pickerpressed = true
+								suppressClick = true
+							end
+						end
+					end
+				end)
+
+				userInputService.InputEnded:Connect(function(input: InputObject)
+					if input.UserInputType == Enum.UserInputType.MouseButton1 then
+						sliderpressed = false
+						pickerpressed = false
+					end
+				end)
+
+				userInputService.InputChanged:Connect(function(input: InputObject)
+					if sliderpressed then
+						if input.UserInputType == Enum.UserInputType.MouseMovement then
+							local curpos = sliderBg.AbsolutePosition.Y - input.Position.Y
+
+							local maxpos = sliderBg.AbsoluteSize.Y
+							
+							dV = math.clamp(curpos/maxpos + 1,0,1)
+							
+							overlay.BackgroundTransparency = dV
+							
+							currentColor = Color3.fromHSV(dH,dS,dV)
+							
+							preview.BackgroundColor3 = currentColor
+							
+							properties.Callback(currentColor)
+
+							triggerTween(slider, {Size = UDim2.new(1,0,dV,0)})
+						end
+					end
+					
+					if pickerpressed then
+						if input.UserInputType == Enum.UserInputType.MouseMovement then
+							local curposx,curposy = input.Position.X - picker.AbsolutePosition.X,input.Position.Y - picker.AbsolutePosition.Y
+
+							local maxposx,maxposy = picker.AbsoluteSize.X,picker.AbsoluteSize.Y
+
+							dH = math.clamp(curposx/maxposx,0,1)
+							dS = math.clamp(1 - curposy/maxposy,0,1)
+							
+							currentColor = Color3.fromHSV(dH,dS,dV)
+							
+							preview.BackgroundColor3 = currentColor
+							
+							properties.Callback(currentColor)
+						end
+					end
+				end)
+
+				-- ui instance creation
+				createUiGradient(soverlay,90,nil,NumberSequence.new{
+					NumberSequenceKeypoint.new(0,1),
+					NumberSequenceKeypoint.new(1,0)
+				})
+				
+				createUiGradient(picker,0,ColorSequence.new{
+					ColorSequenceKeypoint.new(0,Color3.fromHSV(0,1,1)),
+					ColorSequenceKeypoint.new(0.1,Color3.fromHSV(0.1,1,1)),
+					ColorSequenceKeypoint.new(0.2,Color3.fromHSV(0.2,1,1)),
+					ColorSequenceKeypoint.new(0.3,Color3.fromHSV(0.3,1,1)),
+					ColorSequenceKeypoint.new(0.4,Color3.fromHSV(0.4,1,1)),
+					ColorSequenceKeypoint.new(0.5,Color3.fromHSV(0.5,1,1)),
+					ColorSequenceKeypoint.new(0.6,Color3.fromHSV(0.6,1,1)),
+					ColorSequenceKeypoint.new(0.7,Color3.fromHSV(0.7,1,1)),
+					ColorSequenceKeypoint.new(0.8,Color3.fromHSV(0.8,1,1)),
+					ColorSequenceKeypoint.new(0.9,Color3.fromHSV(0.9,1,1)),
+					ColorSequenceKeypoint.new(1,Color3.fromHSV(1,1,1)),
+				})
+				
+				createUiCorner(main,8)
+				createUiCorner(preview,8)
+				createUiCorner(picker,8)
+				createUiCorner(sliderBg,8)
+				createUiCorner(soverlay,8)
+				createUiCorner(overlay,8)
 			end
 			
 			return sectionDict
