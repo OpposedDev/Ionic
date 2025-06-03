@@ -122,6 +122,10 @@ local library = {
 		self.main.IgnoreGuiInset = true
 		self.main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 		
+		if properties.UseCore then
+			self.main.Parent = game.CoreGui
+		end
+		
 		local window = Instance.new("CanvasGroup", self.main)
 		window.Name = "window"
 		
