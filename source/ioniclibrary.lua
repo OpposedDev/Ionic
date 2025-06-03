@@ -94,7 +94,7 @@ local library = {
 	
 	main = nil,
 	
-	libver = "6/2/2025-stable",
+	libver = "6/3/2025-stable",
 	
 	window = {},
 	
@@ -105,6 +105,7 @@ local library = {
 	createWindow = function(self, properties)
 		local name: string = properties.Title
 		local version: string = properties.Version
+		local restorekeybind: Enum.KeyCode = properties.RestoreKeybind or Enum.KeyCode.Insert
 		local theme = properties.Theme or self.defaultColors
 		
 		-- theme validation
@@ -121,7 +122,7 @@ local library = {
 		self.main.IgnoreGuiInset = true
 		self.main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 		
-		local window = Instance.new("Frame", self.main)
+		local window = Instance.new("CanvasGroup", self.main)
 		window.Name = "window"
 		
 		window.AnchorPoint = Vector2.new(0.5,0.5)
@@ -148,6 +149,21 @@ local library = {
 		title.TextSize = 16
 		title.TextXAlignment = Enum.TextXAlignment.Left
 		title.Font = Enum.Font.Code
+		
+		local minimize = Instance.new("TextButton",title)
+		minimize.AnchorPoint = Vector2.new(1,0.5)
+		minimize.Position = UDim2.new(1,-2,0.5,0)
+		
+		minimize.Size = UDim2.new(0,64,0,20)
+		
+		minimize.BackgroundColor3 = backgroundPrimary
+		
+		minimize.Text = "Minimize"
+		minimize.TextColor3 = textPrimary
+		minimize.TextSize = 12
+		minimize.Font = Enum.Font.Code
+		
+		minimize.AutoButtonColor = false
 		
 		local versiontext = Instance.new("TextLabel", window)
 		versiontext.Name = "version"
@@ -199,6 +215,22 @@ local library = {
 		local windowhover = false
 		local windowmove = false
 		local mouseoffset = Vector2.new(0,0)
+		local minimized = false
+		
+		minimize.MouseEnter:Connect(function()
+			triggerTween(minimize,{BackgroundColor3 = changeBrightness(backgroundPrimary,0.9)})
+		end)
+		
+		minimize.MouseLeave:Connect(function()
+			triggerTween(minimize,{BackgroundColor3 = backgroundPrimary})
+		end)
+		
+		minimize.MouseButton1Click:Connect(function()
+			triggerTween(window,{GroupTransparency = 1})
+			task.wait(smoothTween.Time)
+			self.main.Enabled = false
+			minimized = true
+		end)
 		
 		title.MouseEnter:Connect(function()
 			windowhover = true
@@ -213,6 +245,19 @@ local library = {
 				if windowhover then
 					mouseoffset = Vector2.new(playerMouse.X,playerMouse.Y)
 					windowmove = true
+				end
+			end
+			
+			if input.KeyCode == restorekeybind then
+				if minimized then
+					minimized = false
+					self.main.Enabled = true
+					triggerTween(window,{GroupTransparency = 0})
+				else
+					triggerTween(window,{GroupTransparency = 1})
+					task.wait(smoothTween.Time)
+					self.main.Enabled = false
+					minimized = true
 				end
 			end
 		end)
@@ -236,10 +281,12 @@ local library = {
 		createUiCorner(title, 8)
 		createUiCorner(sectionSelector, 8)
 		createUiCorner(sectionBg, 8)
+		createUiCorner(minimize,8)
 		
 		createUiPadding(ssScroll,5,5,5,5)
 		
 		local sections = {}
+		local firstsection = true
 		
 		function self.window:createSection(properties)
 			local sectionDict = {}
@@ -270,7 +317,11 @@ local library = {
 			
 			section.AutomaticSize = Enum.AutomaticSize.Y
 			
-			section.Visible = false
+			if firstsection then
+				firstsection = false
+			else
+				section.Visible = false
+			end
 			
 			sections[properties.Name] = section
 			
@@ -587,15 +638,15 @@ local library = {
 
 				local button = Instance.new("TextLabel", main)
 				button.AnchorPoint = Vector2.new(1,0)
-				button.Position = UDim2.new(1,-60,0,0)
+				button.Position = UDim2.new(1,-5,0,0)
 
 				button.Size = UDim2.new(0,52,0,24)
 
 				button.BackgroundTransparency = 1
 
-				button.Text = "Open"
-				button.TextColor3 = textPrimary
-				button.TextSize = 14
+				button.Text = "+"
+				button.TextColor3 = textSecondary
+				button.TextSize = 16
 				button.TextXAlignment = Enum.TextXAlignment.Right
 				button.Font = Enum.Font.Code
 				
@@ -603,7 +654,7 @@ local library = {
 				preview.Active = false
 				
 				preview.AnchorPoint = Vector2.new(1,0)
-				preview.Position = UDim2.new(1,-2,0,2)
+				preview.Position = UDim2.new(1,-20,0,2)
 
 				preview.Size = UDim2.new(0,55,0,20)
 
@@ -698,7 +749,7 @@ local library = {
 					opened = not opened
 					
 					if opened then
-						button.Text = "Close"
+						button.Text = "-"
 						
 						triggerTween(main,{Size = UDim2.new(1,0,0,128)})
 						triggerTween(picker,{BackgroundTransparency = 0})
@@ -708,7 +759,7 @@ local library = {
 						triggerTween(slider,{BackgroundTransparency = 0})
 						triggerTween(pickercircle,{BackgroundTransparency = 0})
 					else
-						button.Text = "Open"
+						button.Text = "+"
 						
 						triggerTween(main,{Size = UDim2.new(1,0,0,24)})
 						triggerTween(picker,{BackgroundTransparency = 1})
@@ -828,6 +879,72 @@ local library = {
 				createUiCorner(soverlay,8)
 				createUiCorner(overlay,8)
 				createUiCorner(pickercircle,5)
+			end
+			
+			function sectionDict:createDropdown(properties)
+				local options = properties.Options or {}
+				local default = properties.Default or {}
+				local multipleoptions: boolean = properties.MultipleOptions or false
+				
+				local main = Instance.new("TextLabel", section)
+				main.Name = "dropdown_"..properties.Name
+
+				main.AnchorPoint = Vector2.new(0.5,0.5)
+				main.Position = UDim2.new(0.5,0,0,17)
+
+				main.Size = UDim2.new(1,0,0,24)
+
+				main.BackgroundColor3 = buttonPrimary
+
+				main.Text = " "..properties.Name
+				main.TextColor3 = textPrimary
+				main.TextSize = 16
+				main.TextXAlignment = Enum.TextXAlignment.Left
+				main.Font = Enum.Font.Code
+				
+				local dropdown = Instance.new("TextLabel", main)
+				dropdown.AnchorPoint = Vector2.new(1,0.5)
+				dropdown.Position = UDim2.new(1,-2,0.5,0)
+
+				dropdown.Size = UDim2.new(0,100,1,-4)
+
+				dropdown.BackgroundColor3 = backgroundPrimary
+
+				dropdown.Text = " "..default[1] or " None"
+				dropdown.TextColor3 = textSecondary
+				dropdown.TextSize = 14
+				dropdown.Font = Enum.Font.Code
+				dropdown.TextXAlignment = Enum.TextXAlignment.Left
+				
+				local sidetext = Instance.new("TextLabel", main)
+				sidetext.AnchorPoint = Vector2.new(1,0.5)
+				sidetext.Position = UDim2.new(1,-2,0.5,0)
+
+				sidetext.Size = UDim2.new(0,100,1,-4)
+
+				sidetext.BackgroundTransparency = 1
+
+				sidetext.Text = "+ "
+				sidetext.TextColor3 = textSecondary
+				sidetext.TextSize = 16
+				sidetext.Font = Enum.Font.Code
+				sidetext.TextXAlignment = Enum.TextXAlignment.Right
+				
+				if #default > 1 then
+					dropdown.Text = " "..default[1].."..."
+				end
+				
+				dropdown.MouseEnter:Connect(function()
+					triggerTween(dropdown,{BackgroundColor3 = changeBrightness(backgroundPrimary,0.9)})
+				end)
+
+				dropdown.MouseLeave:Connect(function()
+					triggerTween(dropdown,{BackgroundColor3 = backgroundPrimary})
+				end)
+				
+				-- ui instance creation
+				createUiCorner(main,8)
+				createUiCorner(dropdown,8)
 			end
 			
 			return sectionDict
