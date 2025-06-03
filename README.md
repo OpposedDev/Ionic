@@ -14,6 +14,7 @@ local Ionic = loadstring(game:HttpGet("https://raw.githubusercontent.com/Opposed
 local window = library:createWindow({
 	Title = "Ionic Library Example", -- Title at the top of the window
 	Version = "Example", -- Version displayed at the bottom of the window
+	RestoreKeybind = Enum.KeyCode.Insert, -- Minimize / Restore Keybind
 })
 ```
 
