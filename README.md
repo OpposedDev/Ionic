@@ -6,7 +6,7 @@ A simplistic and easy-to-use UI Library made for use on any Roblox executor.
 
 ## Loading the Library
 ```lua
-local Ionic = loadstring(game:HttpGet("https://raw.githubusercontent.com/OpposedDev/Ionic/refs/heads/main/source/ioniclibrary.lua"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/OpposedDev/Ionic/refs/heads/main/source/ioniclibrary.lua"))()
 ```
 
 ## Creating a Window
@@ -15,6 +15,7 @@ local window = library:createWindow({
 	Title = "Ionic Library Example", -- Title at the top of the window
 	Version = "Example", -- Version displayed at the bottom of the window
 	RestoreKeybind = Enum.KeyCode.Insert, -- Minimize / Restore Keybind
+	UseCore = true, -- Use CoreGui over PlayerGui
 })
 ```
 
